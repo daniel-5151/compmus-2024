@@ -1,0 +1,33 @@
+---
+title: "Storyboard"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+```
+
+Column
+-----------------------------------------------------------------------
+
+### Chart A
+
+```{r}
+
+```
+
+
+### Chart B
+
+```{r}
+
+```
+
+### Chart C
+
+```{r}
+
+```
+
