@@ -2,32 +2,82 @@
 title: "Storyboard"
 output: 
   flexdashboard::flex_dashboard:
-    orientation: columns
+    storyboard: true
 ---
 
 ```{r setup, include=FALSE}
 library(flexdashboard)
+library(tidyverse)
+library(spotifyr)
+library(plotly)
 ```
 
-Column
------------------------------------------------------------------------
+```{r include=FALSE}
+w_coast <- get_playlist_audio_features("", "1tedC3EGRGEfND4FC6tNh9")
+e_coast <- get_playlist_audio_features("", "2oEAhFyowqlsyqyvix9tgM")
 
-### Chart A
+rock_full <-
+  bind_rows(
+    w_coast |> mutate(location = "West Coast"),
+    e_coast |> mutate(location = "East Coast")
+  )
+```
+
+### Introduction
 
 ```{r}
-
 ```
 
-
-### Chart B
+### West Coast music has a slower tempo
 
 ```{r}
+total_mean <- mean(rock_full$tempo)
+total_max <- max(rock_full$tempo)
+x_start = 0.5
+y_start <- total_mean - 15
+x_end <- 0.5
+y_end <- total_mean
 
+
+tempo <- rock_full |>
+  ggplot(aes(x = location, y = tempo, fill = location, alpha = 0.8)) +
+  geom_boxplot() +
+  geom_hline(yintercept = total_mean,
+    color = "grey40", 
+    linetype=3) +
+  annotate(
+    "text",
+    x = x_start, y = y_start,
+    label = "Total\naverage",
+    vjust = 1, size = 3, color = "grey40"
+  ) +
+  annotate(
+    "curve",
+    x = x_start, y = y_start,
+    xend = x_end, yend = y_end,
+    arrow = arrow(length = unit(0.2, "cm"), type = "closed"),
+    color = "grey40"
+  ) +
+  scale_y_continuous(         # Fine-tune the y axis in the same way.
+    limits = c(0, total_max + 10),
+    breaks = c(0, 50, 100, 150, 200),
+    minor_breaks = NULL
+  ) +
+  theme_light() +
+  theme(
+    legend.position = "none",
+    panel.grid.major.x = element_blank()
+  ) +
+  labs(
+    x = "Location",
+    y = "Tempo",
+    title = "Tempo Distribution per Location"
+  )
+
+ggplotly(tempo)
 ```
 
-### Chart C
+*** 
 
-```{r}
-
-```
+Rock music from the West Coast does seem to have a slightly slower tempo then rock music from the East Coast, as was suspected beforehand. However, this difference is not as big as expected.  What  also interesting is that West Coast rock does have a bigger variance than the East Coast. I expected it to be the other way, since the East Coast has more metropolitan areas and would thus expect more variety. 
 
