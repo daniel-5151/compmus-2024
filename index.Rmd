@@ -1,5 +1,6 @@
 ---
-title: "Storyboard"
+title: "Portfolio for Computational Musicology"
+author: "Daniel Drucker"
 output: 
   flexdashboard::flex_dashboard:
     storyboard: true
