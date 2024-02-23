@@ -26,8 +26,17 @@ rock_full <-
 
 ### Introduction
 
-```{r}
-```
+
+This portfolio will focus on differences between classic rock music of different geographic regions. These will be the American East Coast and the American West Coast. During the 60's and 70's there were some notable cultural differences between these two regions. The East Coast was often associated with urban life and working class. The West Coast on the other hand was seen as more laid-back and 'hippie' like.
+
+For this research, the corpus consists of two self-made playlists:
+
+- Rock music from artists based in the West Coast (https://open.spotify.com/playlist/1XFfLTd4OJWoKXsR5Ow3Hh?si=56b29ddb70ff4f4e)
+- Rock music from artists based in the East Coast (https://open.spotify.com/playlist/094jWBp6sI0htPaFhXSyng?si=c749c6ea12784ab5)
+
+
+Both have a good variety of artists. The time period is mostly in the 60's and 70's, but also some in the 80's. A potential weakness is that there is not a distinction between sub-genres. Some sub-genres might mix between the two genres that could mess with the analyses. Artists could also be influences from other artists in the other region. However, this analyses will mostly focus on the big trends.  
+
 
 ### West Coast music has a slower tempo
 
@@ -80,5 +89,6 @@ ggplotly(tempo)
 
 *** 
 
-Rock music from the West Coast does seem to have a slightly slower tempo then rock music from the East Coast, as was suspected beforehand. However, this difference is not as big as expected.  What  also interesting is that West Coast rock does have a bigger variance than the East Coast. I expected it to be the other way, since the East Coast has more metropolitan areas and would thus expect more variety. 
+Rock music from the West Coast does seem to have a slightly slower tempo then rock music from the East Coast. This difference was expected beforehand. The more laid-back lifestyle of the West Coast can be an explanation for a slower tempo. The urban lifestyle on the East Coast means a faster face of life, and thus a higher tempo in the music.
 
+The difference, however, is not that big. The median tempo of East Coast rock is only about 4% higher. The biggest difference is noticeable in the top 25-50 percentile, were West Coast rock is a lot slower paced then its eastern counterpart. East Coast rock also seems to have a bigger variety in tempo.
