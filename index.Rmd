@@ -14,8 +14,8 @@ library(plotly)
 ```
 
 ```{r include=FALSE}
-w_coast <- get_playlist_audio_features("", "1tedC3EGRGEfND4FC6tNh9")
-e_coast <- get_playlist_audio_features("", "2oEAhFyowqlsyqyvix9tgM")
+w_coast <- get_playlist_audio_features("", "1XFfLTd4OJWoKXsR5Ow3Hh")
+e_coast <- get_playlist_audio_features("", "094jWBp6sI0htPaFhXSyng")
 
 rock_full <-
   bind_rows(
