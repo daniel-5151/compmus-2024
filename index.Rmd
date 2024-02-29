@@ -14,31 +14,32 @@ library(plotly)
 ```
 
 ```{r include=FALSE}
-w_coast <- get_playlist_audio_features("", "1XFfLTd4OJWoKXsR5Ow3Hh")
-e_coast <- get_playlist_audio_features("", "094jWBp6sI0htPaFhXSyng")
+rock_classic <- get_playlist_audio_features("", "37i9dQZF1DWXRqgorJj26U")
+rock_modern <- get_playlist_audio_features("", "37i9dQZF1DX1helbHcrYM1")
 
 rock_full <-
   bind_rows(
-    w_coast |> mutate(location = "West Coast"),
-    e_coast |> mutate(location = "East Coast")
+    rock_classic |> mutate(time_period = "Classic"),
+    rock_modern |> mutate(time_period = "Modern")
   )
 ```
 
 ### Introduction
 
+Fot years on end my most listened to genre in my Spotify Wrapped has been rock music. Not surprising, since a large part of my personal playlists contain this genre. When looking at this, there is a really wide range of different time periods of rock music in my playlists. This got me thinking about what the differences between rock music in different time periods might be. The main focus of this portfolio will thus be on this comparison.
 
-This portfolio will focus on differences between classic rock music of different geographic regions. These will be the American East Coast and the American West Coast. During the 60's and 70's there were some notable cultural differences between these two regions. The East Coast was often associated with urban life and working class. The West Coast on the other hand was seen as more laid-back and 'hippie' like.
+For this research, I will first focus on the main differences between Classic Rock and Modern Rock. For this, I will utilise two pre-made playlists by Spotify:
 
-For this research, the corpus consists of two self-made playlists:
+- Classical Rock: https://open.spotify.com/playlist/37i9dQZF1DWXRqgorJj26U?si=61e74e1c835f4df3
 
-- Rock music from artists based in the West Coast (https://open.spotify.com/playlist/1XFfLTd4OJWoKXsR5Ow3Hh?si=56b29ddb70ff4f4e)
-- Rock music from artists based in the East Coast (https://open.spotify.com/playlist/094jWBp6sI0htPaFhXSyng?si=c749c6ea12784ab5)
+- Modern Rock: https://open.spotify.com/playlist/37i9dQZF1DX1helbHcrYM1?si=fcf01e3fa0594af3
+
+At later stages of the project, we can more deeply zoom in on different time periods or subgenres.
+
+There are two potential weaknesses of the corpus used for this research. The first of these is that these playlists do not take different subgenres into account. It is for example known that in classical rock there is a difference between geographic regions. The difference of these subgenres can have an impact on the overall research. I do however not have the knowledge to make these distinctions, so I will just look at the big picture. The second weakness is that the corpus used is made by Spotify, which tends to put recomendations for the user in its playlists. This means the corpus might be a reflection of my own musical taste.
 
 
-Both have a good variety of artists. The time period is mostly in the 60's and 70's, but also some in the 80's. A potential weakness is that there is not a distinction between sub-genres. Some sub-genres might mix between the two genres that could mess with the analyses. Artists could also be influences from other artists in the other region. However, this analyses will mostly focus on the big trends.  
-
-
-### West Coast music has a slower tempo
+### Classic Rock has a slower tempo than Modern Rock
 
 ```{r}
 total_mean <- mean(rock_full$tempo)
@@ -50,7 +51,7 @@ y_end <- total_mean
 
 
 tempo <- rock_full |>
-  ggplot(aes(x = location, y = tempo, fill = location, alpha = 0.8)) +
+  ggplot(aes(x = time_period, y = tempo, fill = time_period, alpha = 0.8)) +
   geom_boxplot() +
   geom_hline(yintercept = total_mean,
     color = "grey40", 
@@ -89,6 +90,6 @@ ggplotly(tempo)
 
 *** 
 
-Rock music from the West Coast does seem to have a slightly slower tempo then rock music from the East Coast. This difference was expected beforehand. The more laid-back lifestyle of the West Coast can be an explanation for a slower tempo. The urban lifestyle on the East Coast means a faster face of life, and thus a higher tempo in the music.
+Modern Rock Music does seem to have a noticabely higher tempo than Classical Rock. One of the reasons of this can be the overall faster pace of life in the modern world, which might be reflected in music.
 
-The difference, however, is not that big. The median tempo of East Coast rock is only about 4% higher. The biggest difference is noticeable in the top 25-50 percentile, were West Coast rock is a lot slower paced then its eastern counterpart. East Coast rock also seems to have a bigger variety in tempo.
+The difference, however, is not that big. The median tempo of Modern Rock is only about 3.4% higher than Classical Rock. The main difference seems to be in the top 50 percentile, where Modern Rock has a significantly higher tempo than its classical counterpart. Another interesting obervation is the fact that Modern Rock does have a bigger variety.
