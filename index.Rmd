@@ -1,6 +1,6 @@
 ---
 title: "Portfolio for Computational Musicology"
-author: "Daniel Drucker"
+author: "Daniël Drucker"
 output: 
   flexdashboard::flex_dashboard:
     storyboard: true
@@ -22,6 +22,11 @@ rock_full <-
     rock_classic |> mutate(time_period = "Classic"),
     rock_modern |> mutate(time_period = "Modern")
   )
+
+rock_full$track.album.release_date <- as.Date(rock_full$track.album.release_date)
+
+rock_full <- rock_full %>%
+  mutate(year = lubridate::year(track.album.release_date), .after = playlist_owner_id)
 ```
 
 ### Introduction
@@ -36,8 +41,29 @@ For this research, I will first focus on the main differences between Classic Ro
 
 At later stages of the project, we can more deeply zoom in on different time periods or subgenres.
 
-There are two potential weaknesses of the corpus used for this research. The first of these is that these playlists do not take different subgenres into account. It is for example known that in classical rock there is a difference between geographic regions. The difference of these subgenres can have an impact on the overall research. I do however not have the knowledge to make these distinctions, so I will just look at the big picture. The second weakness is that the corpus used is made by Spotify, which tends to put recomendations for the user in its playlists. This means the corpus might be a reflection of my own musical taste.
+There are two potential weaknesses of the corpus used for this research. The first of these is that these playlists do not take different subgenres into account. It is for example known that in classical rock there is a difference between geographic regions. The difference of these subgenres can have an impact on the overall research. I do however not have the knowledge to make these distinctions, so I will just look at the big picture. The second weakness is that the corpus used is made by Spotify, which tends to put recommendations for the user in its playlists. This means the corpus might be a reflection of my own musical taste.
 
+``` {r}
+count_year <- rock_full %>%
+  group_by(year, time_period) %>%
+  summarise(count = n())
+
+years <- ggplot(count_year, aes(x = year, y = count, fill = time_period)) +
+  geom_bar(stat = "identity") +
+  theme_light() + 
+  theme(
+    panel.grid.major.x = element_blank()
+  ) +
+  labs(
+    x = "Count",
+    y = "Year",
+    title = "Distibution of year per playlist",
+    fill = "Playlist"
+  )
+
+ggplotly(years) %>%
+  layout(height = 400, width = 650)
+```
 
 ### Classic Rock has a slower tempo than Modern Rock
 
@@ -69,7 +95,7 @@ tempo <- rock_full |>
     arrow = arrow(length = unit(0.2, "cm"), type = "closed"),
     color = "grey40"
   ) +
-  scale_y_continuous(         # Fine-tune the y axis in the same way.
+  scale_y_continuous(     
     limits = c(0, total_max + 10),
     breaks = c(0, 50, 100, 150, 200),
     minor_breaks = NULL
