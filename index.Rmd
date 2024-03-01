@@ -11,6 +11,8 @@ library(flexdashboard)
 library(tidyverse)
 library(spotifyr)
 library(plotly)
+library(compmus)
+library(cowplot)
 ```
 
 ```{r include=FALSE}
@@ -63,6 +65,12 @@ years <- ggplot(count_year, aes(x = year, y = count, fill = time_period)) +
 
 ggplotly(years) %>%
   layout(height = 400, width = 650)
+```
+
+``` {r}
+rock_full <- rock_full %>%
+  filter(!(time_period == "Classic" & year > 1999) &
+         !(time_period == "Modern" & year < 2000))
 ```
 
 ### Classic Rock has a slower tempo than Modern Rock
@@ -119,3 +127,102 @@ ggplotly(tempo)
 Modern Rock Music does seem to have a noticabely higher tempo than Classical Rock. One of the reasons of this can be the overall faster pace of life in the modern world, which might be reflected in music.
 
 The difference, however, is not that big. The median tempo of Modern Rock is only about 3.4% higher than Classical Rock. The main difference seems to be in the top 50 percentile, where Modern Rock has a significantly higher tempo than its classical counterpart. Another interesting obervation is the fact that Modern Rock does have a bigger variety.
+
+### Chromagram and Cepstrogram
+
+```{r}
+outlier <- "11LmqTE2naFULdEP94AUBa"
+
+chroma <-
+  get_tidy_audio_analysis(outlier) |>
+  select(segments) |>
+  unnest(segments) |>
+  select(start, duration, pitches)
+
+plot1 <-
+  chroma |>
+    mutate(pitches = map(pitches, compmus_normalise, "euclidean")) |>
+    compmus_gather_chroma() |> 
+    ggplot(
+      aes(
+        x = start + duration / 2,
+        width = duration,
+        y = pitch_class,
+        fill = value
+      )
+    ) +
+    geom_tile() +
+    labs(x = "Time (s)", 
+         y = NULL, 
+         fill = "Magnitude",
+         title = "Chromogram (Heart Shaped Box - Nirvana)") +
+    theme_minimal() +
+    scale_fill_viridis_c()
+
+
+chepstro <-
+  get_tidy_audio_analysis(outlier) |> 
+  compmus_align(bars, segments) |>                     
+  select(bars) |>                                      
+  unnest(bars) |>                                      
+  mutate(
+    pitches =
+      map(segments,
+        compmus_summarise, pitches,
+        method = "rms", norm = "euclidean"             
+      )
+  ) |>
+  mutate(
+    timbre =
+      map(segments,
+        compmus_summarise, timbre,
+        method = "rms", norm = "euclidean"            
+      )
+  )
+
+plot2 <-
+  chepstro |>
+    compmus_gather_timbre() |>
+    ggplot(
+      aes(
+        x = start + duration / 2,
+        width = duration,
+        y = basis,
+        fill = value
+      )
+    ) +
+    geom_tile() +
+    labs(
+      x = "Time (s)", 
+      y = NULL, 
+      fill = "Magnitude",
+      title = "Chepstrogram (Heart Shaped Box - Nirvana)") +
+    scale_fill_viridis_c() +                              
+    theme_classic()
+
+plot_grid(plot1, plot2, ncol = 1)
+```
+
+***
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+
+### test 1
+```{r}
+
+```
+
+
+### Test 2
+```{r}
+# Select the row with the maximum value for 'modern'
+max_popular_modern <- subset(rock_full, time_period == 'Modern')[which.max(subset(rock_full, time_period == 'Modern')$track.popularity), ]
+
+# Select the row with the maximum value for 'classic'
+max_popular_classic <- subset(rock_full, time_period == 'Classic')[which.max(subset(rock_full, time_period == 'Classic')$track.popularity), ]
+
+max_popular_modern_id <- max_popular_modern$track.uri
+max_popular_classic_id <- max_popular_classic$track.uri
+
+print(max_popular_classic_id)
+```
