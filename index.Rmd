@@ -16,289 +16,89 @@ library(cowplot)
 ```
 
 ```{r include=FALSE}
-rock_classic <- get_playlist_audio_features("", "37i9dQZF1DWXRqgorJj26U")
-rock_modern <- get_playlist_audio_features("", "37i9dQZF1DX1helbHcrYM1")
+playlist_beatles <- get_playlist_audio_features("", "18HKG7EtGQyvhL7t5lFXw6") |>
+  add_audio_analysis()
+playlist_nirvana <- get_playlist_audio_features("", "0G935Lqu0vrEVoPNZNFrqP") |>
+  add_audio_analysis()
+playlist_coldplay <- get_playlist_audio_features("", "1j08FQSS1hD36ldvdVXP3W") |>
+  add_audio_analysis()
 
-rock_full <-
+playlist_full <-
   bind_rows(
-    rock_classic |> mutate(time_period = "Classic"),
-    rock_modern |> mutate(time_period = "Modern")
+    playlist_beatles |> mutate(artist_name = "The Beatles"),
+    playlist_nirvana |> mutate(artist_name = "Nirvana"),
+    playlist_coldplay |> mutate(artist_name = "Coldplay")
   )
-
-rock_full$track.album.release_date <- as.Date(rock_full$track.album.release_date)
-
-rock_full <- rock_full %>%
-  mutate(year = lubridate::year(track.album.release_date), .after = playlist_owner_id)
 ```
 
-``` {r}
-rock_full <- rock_full %>%
-  filter(!(time_period == "Classic" & year > 1999) &
-         !(time_period == "Modern" & year < 2000))
-```
-
-### Chromagram and Cepstrogram
-
+### Track-Level Analyses: Tempo, Volume and Duration
 ```{r}
-outlier <- "11LmqTE2naFULdEP94AUBa"
-
-chroma <-
-  get_tidy_audio_analysis(outlier) |>
-  select(segments) |>
-  unnest(segments) |>
-  select(start, duration, pitches)
-
-plot1a <-
-  chroma |>
-    mutate(pitches = map(pitches, compmus_normalise, "euclidean")) |>
-    compmus_gather_chroma() |> 
-    ggplot(
-      aes(
-        x = start + duration / 2,
-        width = duration,
-        y = pitch_class,
-        fill = value
-      )
-    ) +
-    geom_tile() +
-    labs(x = "Time (s)", 
-         y = NULL, 
-         fill = "Magnitude",
-         title = "Chromogram (Heart Shaped Box - Nirvana)") +
-    theme_minimal() +
-    scale_fill_viridis_c()
-
-
-chepstro <-
-  get_tidy_audio_analysis(outlier) |> 
-  compmus_align(bars, segments) |>                     
-  select(bars) |>                                      
-  unnest(bars) |>                                      
+playlist_full |>
   mutate(
-    pitches =
-      map(segments,
-        compmus_summarise, pitches,
-        method = "rms", norm = "euclidean"             
+    sections =
+      map(
+        sections,                                   
+        summarise_at,
+        vars(tempo, loudness, duration),            
+        list(section_mean = mean, section_sd = sd)
       )
   ) |>
-  mutate(
-    timbre =
-      map(segments,
-        compmus_summarise, timbre,
-        method = "rms", norm = "euclidean"            
-      )
+  unnest(sections) |>
+  ggplot(
+    aes(
+      x = tempo,
+      y = tempo_section_sd,
+      colour = artist_name,
+      alpha = loudness
+    )
+  ) +
+  geom_point(aes(size = duration / 60)) +
+  geom_rug() +
+  theme_light() +
+  ylim(0, 5) +
+  labs(
+    x = "Mean Tempo (bpm)",
+    y = "SD Tempo",
+    title = "Variation in Tempo",
+    colour = "Band Name",
+    size = "Duration (min)",
+    alpha = "Volume (dBFS)"
   )
-
-plot1b <-
-  chepstro |>
-    compmus_gather_timbre() |>
-    ggplot(
-      aes(
-        x = start + duration / 2,
-        width = duration,
-        y = basis,
-        fill = value
-      )
-    ) +
-    geom_tile() +
-    labs(
-      x = "Time (s)", 
-      y = NULL, 
-      fill = "Magnitude",
-      title = "Chepstrogram (Heart Shaped Box - Nirvana)") +
-    scale_fill_viridis_c() +                              
-    theme_classic()
-
-plot_grid(plot1a, plot1b, ncol = 1)
 ```
 
 ***
+The plot on the left gives a more detailed look of the tempo graph made earlier. Here we can see that indeed tracks of Nirvana have a higher tempo and that the tracks of Coldplay and The Beatles are roughly equally distributed.
 
-A clear outlier in the tempo plot was "Heart-Shaped Box" by Nirvana. It has the highest tempo of all the classical songs. The chromagram uses Euclidian distance. The clearest plot for the Chestogram was given by the bars alignment, euclidian distance and root mean square summarization. 
-
-### Self-simularity matrices
-```{r}
-# Select the row with the maximum value for 'modern'
-max_popular_modern <- subset(rock_full, time_period == 'Modern')[which.max(subset(rock_full, time_period == 'Modern')$track.popularity), ]
-
-# Select the row with the maximum value for 'classic'
-max_popular_classic <- subset(rock_full, time_period == 'Classic')[which.max(subset(rock_full, time_period == 'Classic')$track.popularity), ]
-
-max_popular_modern_id <- max_popular_modern$track.uri
-max_popular_classic_id <- max_popular_classic$track.uri
-
-track1 <-
-  get_tidy_audio_analysis("1JSTJqkT5qHq8MDJnJbRE1") |> 
-  compmus_align(bars, segments) |>                     
-  select(bars) |>                                      
-  unnest(bars) |>                                      
-  mutate(
-    pitches =
-      map(segments,
-        compmus_summarise, pitches,
-        method = "rms", norm = "euclidean"             
-      )
-  ) |>
-  mutate(
-    timbre =
-      map(segments,
-        compmus_summarise, timbre,
-        method = "rms", norm = "euclidean"            
-      )
-  )  
-
-track2 <- 
-  get_tidy_audio_analysis("4SqWKzw0CbA05TGszDgMlc") |> 
-  compmus_align(bars, segments) |>                     
-  select(bars) |>                                      
-  unnest(bars) |>                                      
-  mutate(
-    pitches =
-      map(segments,
-        compmus_summarise, pitches,
-        method = "rms", norm = "euclidean"             
-      )
-  ) |>
-  mutate(
-    timbre =
-      map(segments,
-        compmus_summarise, timbre,
-        method = "rms", norm = "euclidean"            
-      )
-  )
-  
-plot2a <- 
-  track1 |>
-  compmus_self_similarity(pitches, "cosine") |> 
-  ggplot(
-    aes(
-      x = xstart + xduration / 2,
-      width = xduration,
-      y = ystart + yduration / 2,
-      height = yduration,
-      fill = d
-    )
-  ) +
-  geom_tile() +
-  coord_fixed() +
-  scale_fill_viridis_c(guide = "none") +
-  theme_classic() +
-  labs(x = "", y = "", title = "Chroma (Every Breath I Take)")
-
-plot2b <- 
-  track1 |>
-  compmus_self_similarity(timbre, "cosine") |> 
-  ggplot(
-    aes(
-      x = xstart + xduration / 2,
-      width = xduration,
-      y = ystart + yduration / 2,
-      height = yduration,
-      fill = d
-    )
-  ) +
-  geom_tile() +
-  coord_fixed() +
-  scale_fill_viridis_c(guide = "none") +
-  theme_classic() +
-  labs(x = "", y = "", title = "Timbre (Every Breath I Take)")
-
-plot2c <- 
-  track2 |>
-  compmus_self_similarity(pitches, "cosine") |> 
-  ggplot(
-    aes(
-      x = xstart + xduration / 2,
-      width = xduration,
-      y = ystart + yduration / 2,
-      height = yduration,
-      fill = d
-    )
-  ) +
-  geom_tile() +
-  coord_fixed() +
-  scale_fill_viridis_c(guide = "none") +
-  theme_classic() +
-  labs(x = "", y = "", title = "Chroma (I Love You So)")
-
-plot2d <- 
-  track2 |>
-  compmus_self_similarity(timbre, "cosine") |> 
-  ggplot(
-    aes(
-      x = xstart + xduration / 2,
-      width = xduration,
-      y = ystart + yduration / 2,
-      height = yduration,
-      fill = d
-    )
-  ) +
-  geom_tile() +
-  coord_fixed() +
-  scale_fill_viridis_c(guide = "none") +
-  theme_classic() +
-  labs(x = "", y = "", title = "Timbre (I Love You So)")
-
-plot_grid(plot2a, plot2b, plot2c, plot2d, ncol = 2)
-```
-
-
-***
-Self-simularity matrices of the most popular track in each category.
-
-Modern: `r max_popular_modern$track.name` - `r max_popular_modern$track.artists.name`
-
-Classic: `r max_popular_classic$track.name` - `r max_popular_classic$track.artists.name`
+What is now also interesting to see is the standard deviation of the tempo for each track. There now seems to be a difference in tempo between The Beatles and Coldplay. According to the graph, The Beatles have more variation of tempo within their tracks then Coldplay. When we keep looking at the standard deviation of tempo, Nirvana seems to also be higher in this regard in comparison to the other two bands.
 
 ### Introduction
+For years on end my most listened to genre in my Spotify Wrapped has been rock music. Not surprising, since a large part of my personal playlists contain this genre. When looking at this, there is a really wide range of different time periods of rock music in my playlists. This got me thinking about what the differences between rock music in different time periods might be. The main focus of this portfolio will thus be on this comparison.
 
-Fot years on end my most listened to genre in my Spotify Wrapped has been rock music. Not surprising, since a large part of my personal playlists contain this genre. When looking at this, there is a really wide range of different time periods of rock music in my playlists. This got me thinking about what the differences between rock music in different time periods might be. The main focus of this portfolio will thus be on this comparison.
+At first the plan was to look at rock as a whole for this comparison, but I soon found out that this would make the comparisons way to brought. This is why I narrowed the corpus down to three bands that each was very influential in their time: The Beatles in the 60's, Nirvana in the 80's/90's and Coldplay in the modern era.
 
-For this research, I will first focus on the main differences between Classic Rock and Modern Rock. For this, I will utilise two pre-made playlists by Spotify:
+The corpus used for this portfolio consists of three playlists, one for each band:
 
-- Classical Rock: https://open.spotify.com/playlist/37i9dQZF1DWXRqgorJj26U?si=61e74e1c835f4df3
+- The Beatles: https://open.spotify.com/playlist/18HKG7EtGQyvhL7t5lFXw6?si=943a7297af884c30
 
-- Modern Rock: https://open.spotify.com/playlist/37i9dQZF1DX1helbHcrYM1?si=fcf01e3fa0594af3
+- Nirvana: https://open.spotify.com/playlist/0G935Lqu0vrEVoPNZNFrqP?si=d99122f1223f407e
 
-At later stages of the project, we can more deeply zoom in on different time periods or subgenres.
+- Coldplay: https://open.spotify.com/playlist/1j08FQSS1hD36ldvdVXP3W?si=b0ec1bff23c644e1
 
-There are two potential weaknesses of the corpus used for this research. The first of these is that these playlists do not take different subgenres into account. It is for example known that in classical rock there is a difference between geographic regions. The difference of these subgenres can have an impact on the overall research. I do however not have the knowledge to make these distinctions, so I will just look at the big picture. The second weakness is that the corpus used is made by Spotify, which tends to put recommendations for the user in its playlists. This means the corpus might be a reflection of my own musical taste.
+The tracks of these playlists come from a selection of Spotify for each band. I copied those to my own playlists and removed the live versions.
 
+
+### What is the difference is tempo?
 ``` {r}
-count_year <- rock_full %>%
-  group_by(year, time_period) %>%
-  summarise(count = n())
-
-years <- ggplot(count_year, aes(x = year, y = count, fill = time_period)) +
-  geom_bar(stat = "identity") +
-  theme_light() + 
-  theme(
-    panel.grid.major.x = element_blank()
-  ) +
-  labs(
-    x = "Count",
-    y = "Year",
-    title = "Distibution of year per playlist",
-    fill = "Playlist"
-  )
-
-ggplotly(years) %>%
-  layout(height = 400, width = 650)
-```
-
-### Classic Rock has a slower tempo than Modern Rock
-
-```{r}
-total_mean <- mean(rock_full$tempo)
-total_max <- max(rock_full$tempo)
+total_mean <- mean(playlist_full$tempo)
+total_max <- max(playlist_full$tempo)
 x_start = 0.5
 y_start <- total_mean - 15
 x_end <- 0.5
 y_end <- total_mean
 
 
-tempo <- rock_full |>
-  ggplot(aes(x = time_period, y = tempo, fill = time_period, alpha = 0.8)) +
+tempo <- playlist_full |>
+  ggplot(aes(x = artist_name, y = tempo, fill = artist_name, alpha = 0.8)) +
   geom_boxplot() +
   geom_hline(yintercept = total_mean,
     color = "grey40", 
@@ -327,19 +127,220 @@ tempo <- rock_full |>
     panel.grid.major.x = element_blank()
   ) +
   labs(
-    x = "Location",
+    x = "Band",
     y = "Tempo",
-    title = "Tempo Distribution per Location"
+    title = "Tempo Distribution per Band"
   )
 
 ggplotly(tempo)
 ```
 
-*** 
+***
 
-Modern Rock Music does seem to have a noticeably higher tempo than Classical Rock. One of the reasons of this can be the overall faster pace of life in the modern world, which might be reflected in music.
+The plot on the left shows how the bands differ in the tempo of their tracks. What strikes out first is that the tracks of Nirvana overall have a much higher tempo then both other bands. The median tempo of Nirvana is about 6.5% higher. This difference is even biggest in the top 50 percentile. This was expected beforehand, since Nirvana is known for its high energy music.
 
-The difference, however, is not that big. The median tempo of Modern Rock is only about 3.4% higher than Classical Rock. The main difference seems to be in the top 50 percentile, where Modern Rock has a significantly higher tempo than its classical counterpart. Another interesting observation is the fact that Modern Rock does have a bigger variety.
+What was not expected however, is the great similarity of tempo of The Beatles and Coldplay. The boxplots of both bands on the left is near identical, where q1, q2 and the median are almost identical. It was expected beforehand that the difference in tempo would be a bit more noticeable. 
+
+### Chromagram and Cepstrogram
+
+```{r}
+outlier <- "11LmqTE2naFULdEP94AUBa"
+
+chroma <-
+  get_tidy_audio_analysis(outlier) |>
+  select(segments) |>
+  unnest(segments) |>
+  select(start, duration, pitches)
+
+plot1a <-
+  chroma |>
+    mutate(pitches = map(pitches, compmus_normalise, "euclidean")) |>
+    compmus_gather_chroma() |>
+    ggplot(
+      aes(
+        x = start + duration / 2,
+        width = duration,
+        y = pitch_class,
+        fill = value
+      )
+    ) +
+    geom_tile() +
+    labs(x = "Time (s)",
+         y = NULL,
+         fill = "Magnitude",
+         title = "Chromogram (Heart Shaped Box - Nirvana)") +
+    theme_minimal() +
+    scale_fill_viridis_c()
 
 
-### Test 2
+chepstro <-
+  get_tidy_audio_analysis(outlier) |>
+  compmus_align(bars, segments) |>
+  select(bars) |>
+  unnest(bars) |>
+  mutate(
+    pitches =
+      map(segments,
+        compmus_summarise, pitches,
+        method = "rms", norm = "euclidean"
+      )
+  ) |>
+  mutate(
+    timbre =
+      map(segments,
+        compmus_summarise, timbre,
+        method = "rms", norm = "euclidean"
+      )
+  )
+
+plot1b <-
+  chepstro |>
+    compmus_gather_timbre() |>
+    ggplot(
+      aes(
+        x = start + duration / 2,
+        width = duration,
+        y = basis,
+        fill = value
+      )
+    ) +
+    geom_tile() +
+    labs(
+      x = "Time (s)",
+      y = NULL,
+      fill = "Magnitude",
+      title = "Chepstrogram (Heart Shaped Box - Nirvana)") +
+    scale_fill_viridis_c() +
+    theme_classic()
+
+plot_grid(plot1a, plot1b, ncol = 1)
+```
+
+***
+
+### Self-Simularity Matrices
+```{r}
+max_popular_beatles <- playlist_beatles[which.max(playlist_beatles$track.popularity), ]
+max_popular_nirvana <- playlist_nirvana[which.max(playlist_nirvana$track.popularity), ]
+max_popular_coldplay <- playlist_coldplay[which.max(playlist_coldplay$track.popularity), ]
+
+max_popular_nirvana_uri <- max_popular_nirvana$track.uri
+max_popular_coldplay_uri <- max_popular_coldplay$track.uri
+
+track1 <-
+  get_tidy_audio_analysis("4CeeEOM32jQcH3eN9Q2dGj") |>
+  compmus_align(bars, segments) |>
+  select(bars) |>
+  unnest(bars) |>
+  mutate(
+    pitches =
+      map(segments,
+        compmus_summarise, pitches,
+        method = "rms", norm = "euclidean"
+      )
+  ) |>
+  mutate(
+    timbre =
+      map(segments,
+        compmus_summarise, timbre,
+        method = "rms", norm = "euclidean"
+      )
+  )
+
+track2 <-
+  get_tidy_audio_analysis("3AJwUDP919kvQ9QcozQPxg") |>
+  compmus_align(bars, segments) |>
+  select(bars) |>
+  unnest(bars) |>
+  mutate(
+    pitches =
+      map(segments,
+        compmus_summarise, pitches,
+        method = "rms", norm = "euclidean"
+      )
+  ) |>
+  mutate(
+    timbre =
+      map(segments,
+        compmus_summarise, timbre,
+        method = "rms", norm = "euclidean"
+      )
+  )
+
+plot2a <-
+  track1 |>
+  compmus_self_similarity(pitches, "cosine") |>
+  ggplot(
+    aes(
+      x = xstart + xduration / 2,
+      width = xduration,
+      y = ystart + yduration / 2,
+      height = yduration,
+      fill = d
+    )
+  ) +
+  geom_tile() +
+  coord_fixed() +
+  scale_fill_viridis_c(guide = "none") +
+  theme_classic() +
+  labs(x = "", y = "", title = "Chroma (Smells Like Teen Spirit)")
+
+plot2b <-
+  track1 |>
+  compmus_self_similarity(timbre, "cosine") |>
+  ggplot(
+    aes(
+      x = xstart + xduration / 2,
+      width = xduration,
+      y = ystart + yduration / 2,
+      height = yduration,
+      fill = d
+    )
+  ) +
+  geom_tile() +
+  coord_fixed() +
+  scale_fill_viridis_c(guide = "none") +
+  theme_classic() +
+  labs(x = "", y = "", title = "Timbre (Smells Like Teen Spirit)")
+
+plot2c <-
+  track2 |>
+  compmus_self_similarity(pitches, "cosine") |>
+  ggplot(
+    aes(
+      x = xstart + xduration / 2,
+      width = xduration,
+      y = ystart + yduration / 2,
+      height = yduration,
+      fill = d
+    )
+  ) +
+  geom_tile() +
+  coord_fixed() +
+  scale_fill_viridis_c(guide = "none") +
+  theme_classic() +
+  labs(x = "", y = "", title = "Chroma (Yellow)")
+
+plot2d <-
+  track2 |>
+  compmus_self_similarity(timbre, "cosine") |>
+  ggplot(
+    aes(
+      x = xstart + xduration / 2,
+      width = xduration,
+      y = ystart + yduration / 2,
+      height = yduration,
+      fill = d
+    )
+  ) +
+  geom_tile() +
+  coord_fixed() +
+  scale_fill_viridis_c(guide = "none") +
+  theme_classic() +
+  labs(x = "", y = "", title = "Timbre (Yellow)")
+
+plot_grid(plot2a, plot2b, plot2c, plot2d, ncol = 2)
+
+```
+
+***
