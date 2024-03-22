@@ -13,23 +13,118 @@ library(spotifyr)
 library(plotly)
 library(compmus)
 library(cowplot)
+library(tidymodels)
+library(ggdendro)
+library(ranger)
+
+get_conf_mat <- function(fit) {
+  outcome <- .get_tune_outcome_names(fit)
+  fit |> 
+    collect_predictions() |> 
+    conf_mat(truth = outcome, estimate = .pred_class)
+}  
+
+get_pr <- function(fit) {
+  fit |> 
+    conf_mat_resampled() |> 
+    group_by(Prediction) |> mutate(precision = Freq / sum(Freq)) |> 
+    group_by(Truth) |> mutate(recall = Freq / sum(Freq)) |> 
+    ungroup() |> filter(Prediction == Truth) |> 
+    select(class = Prediction, precision, recall)
+}  
 ```
 
 ```{r include=FALSE}
-playlist_beatles <- get_playlist_audio_features("", "18HKG7EtGQyvhL7t5lFXw6") |>
-  add_audio_analysis()
-playlist_nirvana <- get_playlist_audio_features("", "0G935Lqu0vrEVoPNZNFrqP") |>
-  add_audio_analysis()
-playlist_coldplay <- get_playlist_audio_features("", "1j08FQSS1hD36ldvdVXP3W") |>
-  add_audio_analysis()
+playlist_beatles <- get_playlist_audio_features("", "18HKG7EtGQyvhL7t5lFXw6")
+playlist_nirvana <- get_playlist_audio_features("", "0G935Lqu0vrEVoPNZNFrqP")
+playlist_coldplay <- get_playlist_audio_features("", "1j08FQSS1hD36ldvdVXP3W") 
 
 playlist_full <-
   bind_rows(
     playlist_beatles |> mutate(artist_name = "The Beatles"),
     playlist_nirvana |> mutate(artist_name = "Nirvana"),
     playlist_coldplay |> mutate(artist_name = "Coldplay")
-  )
+  ) |>
+  add_audio_analysis()
 ```
+
+### Classifier
+```{r include=FALSE}
+artist_features <-
+  playlist_full |>
+  mutate(
+    playlist = factor(artist_name),
+    segments = map2(segments, key, compmus_c_transpose),
+    pitches =
+      map(
+        segments,
+        compmus_summarise, pitches,
+        method = "mean", norm = "manhattan"
+      ),
+    timbre =
+      map(
+        segments,
+        compmus_summarise, timbre,
+        method = "mean",
+      )
+  ) |>
+  mutate(pitches = map(pitches, compmus_normalise, "clr")) |>
+  mutate_at(vars(pitches, timbre), map, bind_rows) |>
+  unnest(cols = c(pitches, timbre))
+```
+
+
+```{r include=FALSE}
+
+artist_recipe <-
+  recipe(
+    playlist ~
+      acousticness +
+      instrumentalness +
+      valence +
+      duration +
+      c02 + c05 + c06 + c11,
+    data = artist_features
+  ) |>
+  step_center(all_predictors()) |>
+  step_scale(all_predictors())
+
+artist_cv <- artist_features |> vfold_cv(5)
+```
+
+```{r}
+forest_model <-
+  rand_forest() |>
+  set_mode("classification") |> 
+  set_engine("ranger", importance = "impurity")
+artist_forest <- 
+  workflow() |> 
+  add_recipe(artist_recipe) |> 
+  add_model(forest_model) |> 
+  fit_resamples(
+    artist_cv, 
+    control = control_resamples(save_pred = TRUE)
+  )
+
+# artist_forest |> get_pr()
+
+artist_forest |> get_conf_mat() |> autoplot(type = "mosaic")
+```
+
+***
+The graph on the left shows the performance of a random-forest classifier trying to distinguish the three artists. Using all features, the most important are listed below:
+
+- acousticness 
+
+- instrumentalness
+
+- valence 
+
+- duration
+
+The classifier also found that some of the chroma are important during classification: c02, c05, c06 and c11. All these features were used to train the random-forest classifier eventually used.
+
+Overall, the classifier performs really well. 
 
 ### Introduction
 For years on end my most listened to genre in my Spotify Wrapped has been rock music. Not surprising, since a large part of my personal playlists contain this genre. When looking at this, there is a really wide range of different time periods of rock music in my playlists. This got me thinking about what the differences between rock music in different time periods might be. The main focus of this portfolio will thus be on this comparison.
