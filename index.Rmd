@@ -31,46 +31,6 @@ playlist_full <-
   )
 ```
 
-### Track-Level Analyses: Tempo, Volume and Duration
-```{r}
-playlist_full |>
-  mutate(
-    sections =
-      map(
-        sections,                                   
-        summarise_at,
-        vars(tempo, loudness, duration),            
-        list(section_mean = mean, section_sd = sd)
-      )
-  ) |>
-  unnest(sections) |>
-  ggplot(
-    aes(
-      x = tempo,
-      y = tempo_section_sd,
-      colour = artist_name,
-      alpha = loudness
-    )
-  ) +
-  geom_point(aes(size = duration / 60)) +
-  geom_rug() +
-  theme_light() +
-  ylim(0, 5) +
-  labs(
-    x = "Mean Tempo (bpm)",
-    y = "SD Tempo",
-    title = "Variation in Tempo",
-    colour = "Band Name",
-    size = "Duration (min)",
-    alpha = "Volume (dBFS)"
-  )
-```
-
-***
-The plot on the left gives a more detailed look of the tempo graph made earlier. Here we can see that indeed tracks of Nirvana have a higher tempo and that the tracks of Coldplay and The Beatles are roughly equally distributed.
-
-What is now also interesting to see is the standard deviation of the tempo for each track. There now seems to be a difference in tempo between The Beatles and Coldplay. According to the graph, The Beatles have more variation of tempo within their tracks then Coldplay. When we keep looking at the standard deviation of tempo, Nirvana seems to also be higher in this regard in comparison to the other two bands.
-
 ### Introduction
 For years on end my most listened to genre in my Spotify Wrapped has been rock music. Not surprising, since a large part of my personal playlists contain this genre. When looking at this, there is a really wide range of different time periods of rock music in my playlists. This got me thinking about what the differences between rock music in different time periods might be. The main focus of this portfolio will thus be on this comparison.
 
@@ -344,3 +304,44 @@ plot_grid(plot2a, plot2b, plot2c, plot2d, ncol = 2)
 ```
 
 ***
+
+
+### Track-Level Analyses: Tempo, Volume and Duration
+```{r}
+playlist_full |>
+  mutate(
+    sections =
+      map(
+        sections,                                   
+        summarise_at,
+        vars(tempo, loudness, duration),            
+        list(section_mean = mean, section_sd = sd)
+      )
+  ) |>
+  unnest(sections) |>
+  ggplot(
+    aes(
+      x = tempo,
+      y = tempo_section_sd,
+      colour = artist_name,
+      alpha = loudness
+    )
+  ) +
+  geom_point(aes(size = duration / 60)) +
+  geom_rug() +
+  theme_light() +
+  ylim(0, 5) +
+  labs(
+    x = "Mean Tempo (bpm)",
+    y = "SD Tempo",
+    title = "Variation in Tempo",
+    colour = "Band Name",
+    size = "Duration (min)",
+    alpha = "Volume (dBFS)"
+  )
+```
+
+***
+The plot on the left gives a more detailed look of the tempo graph made earlier. Here we can see that indeed tracks of Nirvana have a higher tempo and that the tracks of Coldplay and The Beatles are roughly equally distributed.
+
+What is now also interesting to see is the standard deviation of the tempo for each track. There now seems to be a difference in tempo between The Beatles and Coldplay. According to the graph, The Beatles have more variation of tempo within their tracks then Coldplay. When we keep looking at the standard deviation of tempo, Nirvana seems to also be higher in this regard in comparison to the other two bands.
