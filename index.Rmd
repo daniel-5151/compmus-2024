@@ -11,6 +11,8 @@ library(flexdashboard)
 library(tidyverse)
 library(spotifyr)
 library(plotly)
+library(knitr)
+library(kableExtra)
 library(compmus)
 library(cowplot)
 library(tidymodels)
@@ -34,7 +36,7 @@ get_pr <- function(fit) {
 }  
 ```
 
-```{r include=FALSE}
+```{r load_playlists, include=FALSE}
 playlist_beatles <- get_playlist_audio_features("", "18HKG7EtGQyvhL7t5lFXw6")
 playlist_nirvana <- get_playlist_audio_features("", "0G935Lqu0vrEVoPNZNFrqP")
 playlist_coldplay <- get_playlist_audio_features("", "1j08FQSS1hD36ldvdVXP3W") 
@@ -48,90 +50,10 @@ playlist_full <-
   add_audio_analysis()
 ```
 
-### Classifier
-```{r include=FALSE}
-artist_features <-
-  playlist_full |>
-  mutate(
-    playlist = factor(artist_name),
-    segments = map2(segments, key, compmus_c_transpose),
-    pitches =
-      map(
-        segments,
-        compmus_summarise, pitches,
-        method = "mean", norm = "manhattan"
-      ),
-    timbre =
-      map(
-        segments,
-        compmus_summarise, timbre,
-        method = "mean",
-      )
-  ) |>
-  mutate(pitches = map(pitches, compmus_normalise, "clr")) |>
-  mutate_at(vars(pitches, timbre), map, bind_rows) |>
-  unnest(cols = c(pitches, timbre))
-```
-
-
-```{r include=FALSE}
-
-artist_recipe <-
-  recipe(
-    playlist ~
-      acousticness +
-      instrumentalness +
-      valence +
-      duration +
-      c02 + c05 + c06 + c11,
-    data = artist_features
-  ) |>
-  step_center(all_predictors()) |>
-  step_scale(all_predictors())
-
-artist_cv <- artist_features |> vfold_cv(5)
-```
-
-```{r}
-forest_model <-
-  rand_forest() |>
-  set_mode("classification") |> 
-  set_engine("ranger", importance = "impurity")
-artist_forest <- 
-  workflow() |> 
-  add_recipe(artist_recipe) |> 
-  add_model(forest_model) |> 
-  fit_resamples(
-    artist_cv, 
-    control = control_resamples(save_pred = TRUE)
-  )
-
-# artist_forest |> get_pr()
-
-artist_forest |> get_conf_mat() |> autoplot(type = "mosaic")
-```
-
-***
-The graph on the left shows the performance of a random-forest classifier trying to distinguish the three artists. Using all features, the most important are listed below:
-
-- acousticness 
-
-- instrumentalness
-
-- valence 
-
-- duration
-
-The classifier also found that some of the chroma are important during classification: c02, c05, c06 and c11. All these features were used to train the random-forest classifier eventually used.
-
-Overall, the classifier performs really well. 
-
 ### Introduction
-For years on end my most listened to genre in my Spotify Wrapped has been rock music. Not surprising, since a large part of my personal playlists contain this genre. When looking at this, there is a really wide range of different time periods of rock music in my playlists. This got me thinking about what the differences between rock music in different time periods might be. The main focus of this portfolio will thus be on this comparison.
+For the last few years my most listened to genre in my Spotify Wrapped has been Rock Music. Not surprising, since a large part of my personal playlists contain this genre. There is, however, a lot of subgenres within Rock. After it's quick rise of popularity in the 1960's, there have been a lot of different developments and movements. This is also the case in the music that I listen to, where there is a wide range of different subgenres. This got me thinking about what the differences between rock music in different time periods might be.  The main focus of this portfolio will be to uncover these differences within the limits of the Spotify API. We will do so by looking at a few different topics for different tracks. Examples of these will include track-level features, chroma features, different chords used and tempo.  
 
-At first the plan was to look at rock as a whole for this comparison, but I soon found out that this would make the comparisons way to brought. This is why I narrowed the corpus down to three bands that each was very influential in their time: The Beatles in the 60's, Nirvana in the 80's/90's and Coldplay in the modern era.
-
-The corpus used for this portfolio consists of three playlists, one for each band:
+At first the plan was to look at rock as a whole for this comparison, but I soon found out that this would make the comparisons way to brought with all the different. This is why I narrowed the corpus down to three bands that each was very influential in their time: The Beatles in the 60's, Nirvana in the 80's/90's and Coldplay in the modern era. For each band I made a playlist based on the ones provided by Spotify. These include the most popular tracks. I then removed all the live tracks, since those can intervene with this research. The playlists can be found in the links below: 
 
 - The Beatles: https://open.spotify.com/playlist/18HKG7EtGQyvhL7t5lFXw6?si=943a7297af884c30
 
@@ -139,8 +61,35 @@ The corpus used for this portfolio consists of three playlists, one for each ban
 
 - Coldplay: https://open.spotify.com/playlist/1j08FQSS1hD36ldvdVXP3W?si=b0ec1bff23c644e1
 
-The tracks of these playlists come from a selection of Spotify for each band. I copied those to my own playlists and removed the live versions.
 
+Below are some interesting stats about the corpus for each band:
+```{r introduction_table}
+artist_stats <- playlist_full %>%
+  group_by(artist_name) %>%
+  summarise(num_entries = n(),
+            total_duration = sum(track.duration_ms) / (1000 * 60),
+            min_release_year = min(track.album.release_date),
+            max_release_year = max(track.album.release_date))
+
+artist_stats <- rename(artist_stats, "Band Name" = artist_name, 
+                       "Number of Tracks" = num_entries,
+                       "Total Duration (min)" = total_duration,
+                       "First Album Release" = min_release_year,
+                       "Last Album Release" = max_release_year)
+
+kable(artist_stats) %>%
+  kable_styling(full_width = FALSE, position = "left")
+```
+
+***
+The Beatles:
+<iframe style="border-radius:12px" src="https://open.spotify.com/embed/playlist/18HKG7EtGQyvhL7t5lFXw6?utm_source=generator&theme=0" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+
+Nirvana:
+<iframe style="border-radius:12px" src="https://open.spotify.com/embed/playlist/0G935Lqu0vrEVoPNZNFrqP?utm_source=generator" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+
+Coldplay:
+<iframe style="border-radius:12px" src="https://open.spotify.com/embed/playlist/1j08FQSS1hD36ldvdVXP3W?utm_source=generator&theme=0" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
 
 ### What is the difference is tempo?
 ``` {r}
@@ -440,3 +389,81 @@ playlist_full |>
 The plot on the left gives a more detailed look of the tempo graph made earlier. Here we can see that indeed tracks of Nirvana have a higher tempo and that the tracks of Coldplay and The Beatles are roughly equally distributed.
 
 What is now also interesting to see is the standard deviation of the tempo for each track. There now seems to be a difference in tempo between The Beatles and Coldplay. According to the graph, The Beatles have more variation of tempo within their tracks then Coldplay. When we keep looking at the standard deviation of tempo, Nirvana seems to also be higher in this regard in comparison to the other two bands.
+
+### Classifier
+```{r include=FALSE}
+artist_features <-
+  playlist_full |>
+  mutate(
+    playlist = factor(artist_name),
+    segments = map2(segments, key, compmus_c_transpose),
+    pitches =
+      map(
+        segments,
+        compmus_summarise, pitches,
+        method = "mean", norm = "manhattan"
+      ),
+    timbre =
+      map(
+        segments,
+        compmus_summarise, timbre,
+        method = "mean",
+      )
+  ) |>
+  mutate(pitches = map(pitches, compmus_normalise, "clr")) |>
+  mutate_at(vars(pitches, timbre), map, bind_rows) |>
+  unnest(cols = c(pitches, timbre))
+```
+
+
+```{r include=FALSE}
+
+artist_recipe <-
+  recipe(
+    playlist ~
+      acousticness +
+      instrumentalness +
+      valence +
+      duration +
+      c02 + c05 + c06 + c11,
+    data = artist_features
+  ) |>
+  step_center(all_predictors()) |>
+  step_scale(all_predictors())
+
+artist_cv <- artist_features |> vfold_cv(5)
+```
+
+```{r}
+forest_model <-
+  rand_forest() |>
+  set_mode("classification") |> 
+  set_engine("ranger", importance = "impurity")
+artist_forest <- 
+  workflow() |> 
+  add_recipe(artist_recipe) |> 
+  add_model(forest_model) |> 
+  fit_resamples(
+    artist_cv, 
+    control = control_resamples(save_pred = TRUE)
+  )
+
+# artist_forest |> get_pr()
+
+artist_forest |> get_conf_mat() |> autoplot(type = "mosaic")
+```
+
+***
+The graph on the left shows the performance of a random-forest classifier trying to distinguish the three artists. Using all features, the most important are listed below:
+
+- acousticness 
+
+- instrumentalness
+
+- valence 
+
+- duration
+
+The classifier also found that some of the chroma are important during classification: c02, c05, c06 and c11. All these features were used to train the random-forest classifier eventually used.
+
+Overall, the classifier performs really well. 
