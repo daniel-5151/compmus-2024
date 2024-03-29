@@ -4,6 +4,7 @@ author: "Daniël Drucker"
 output: 
   flexdashboard::flex_dashboard:
     storyboard: true
+    self_contained: false
 ---
 
 ```{r setup, include=FALSE}
