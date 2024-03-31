@@ -93,7 +93,7 @@ Coldplay:
 <iframe style="border-radius:12px" src="https://open.spotify.com/embed/playlist/1j08FQSS1hD36ldvdVXP3W?utm_source=generator&theme=0" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
 
 ### Track-Level Features: Valence and Energy
-```{r track_level_features}
+```{r track-features-1}
 plot_valence <- playlist_full |>
   ggplot(aes(x = artist_name, y = valence, fill = artist_name, alpha = 0.8)) +
   geom_boxplot() +
@@ -345,10 +345,10 @@ plot_grid(plot2a, plot2b, plot2c, plot2d, ncol = 2)
 ```
 
 ***
+hallo
 
-
-### Track-Level Analyses: Tempo, Volume and Duration
-```{r}
+### Track-Level Features: Tempo and Loudness
+```{r track-features-2}
 playlist_full |>
   mutate(
     sections =
@@ -368,24 +368,25 @@ playlist_full |>
       alpha = loudness
     )
   ) +
-  geom_point(aes(size = duration / 60)) +
+  geom_point(size = 4) +
   geom_rug() +
   theme_light() +
-  ylim(0, 5) +
+  ylim(0, 10) +
   labs(
     x = "Mean Tempo (bpm)",
     y = "SD Tempo",
-    title = "Variation in Tempo",
+    title = "Variation in Tempo and Loudness",
     colour = "Band Name",
-    size = "Duration (min)",
-    alpha = "Volume (dBFS)"
+    alpha = "Loudness (dBFS)"
   )
+
+
 ```
 
 ***
-The plot on the left gives a more detailed look of the tempo graph made earlier. Here we can see that indeed tracks of Nirvana have a higher tempo and that the tracks of Coldplay and The Beatles are roughly equally distributed.
+Now lets have a look at two other important track-level features: tempo and loudness/volume. The plot on the left shows these features for each individual track in the corpus on the sections level. When looking at the alpha of each track, there does not seem to be a big difference in the loudness between tracks. Only The Beatles do have some tracks with a low volume.
 
-What is now also interesting to see is the standard deviation of the tempo for each track. There now seems to be a difference in tempo between The Beatles and Coldplay. According to the graph, The Beatles have more variation of tempo within their tracks then Coldplay. When we keep looking at the standard deviation of tempo, Nirvana seems to also be higher in this regard in comparison to the other two bands.
+The tempo in this graph yields some interesting results. When it comes to the mean tempoin BPM, Nirvana seems to be overall the highest. Coldplay and The Beatles have around the same median tempo for their tracks. The biggest differences, however, are notable with the variation of different used tempo's throughout each track. Nirvana is again the highest in this regard. But now there is also a difference notable between Coldplay and The Beatles. Coldplay seem to mostly stay around the same tempo throughout their tracks. The Beatles on the other hand have more variation with different tempo's. When further looking at the standard deviations, there seem to be some notable outliers above 5.0 BPM. Let's have a closer look at one of those tracks in the next chapter.  
 
 ### Classifier
 ```{r include=FALSE}
