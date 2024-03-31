@@ -347,6 +347,8 @@ plot_grid(plot2a, plot2b, plot2c, plot2d, ncol = 2)
 ***
 hallo
 
+### keygram / chordogram
+
 ### Track-Level Features: Tempo and Loudness
 ```{r track-features-2}
 playlist_full |>
@@ -371,7 +373,6 @@ playlist_full |>
   geom_point(size = 4) +
   geom_rug() +
   theme_light() +
-  ylim(0, 10) +
   labs(
     x = "Mean Tempo (bpm)",
     y = "SD Tempo",
@@ -386,11 +387,53 @@ playlist_full |>
 ***
 Now lets have a look at two other important track-level features: tempo and loudness/volume. The plot on the left shows these features for each individual track in the corpus on the sections level. When looking at the alpha of each track, there does not seem to be a big difference in the loudness between tracks. Only The Beatles do have some tracks with a low volume.
 
-The tempo in this graph yields some interesting results. When it comes to the mean tempoin BPM, Nirvana seems to be overall the highest. Coldplay and The Beatles have around the same median tempo for their tracks. The biggest differences, however, are notable with the variation of different used tempo's throughout each track. Nirvana is again the highest in this regard. But now there is also a difference notable between Coldplay and The Beatles. Coldplay seem to mostly stay around the same tempo throughout their tracks. The Beatles on the other hand have more variation with different tempo's. When further looking at the standard deviations, there seem to be some notable outliers above 5.0 BPM. Let's have a closer look at one of those tracks in the next chapter.  
+The tempo in this graph yields some interesting results. When it comes to the mean tempoin BPM, Nirvana seems to be overall the highest. Coldplay and The Beatles have around the same median tempo for their tracks. The biggest differences, however, are notable with the variation of different used tempo's throughout each track. Most of the tracks of all three bands have a low variation in tempo. Nirvana has again the highest, followed by The Beatles and then Coldplay. All bands also have noticable outliers, with Coldplay having the most. Let’s have a closer look at some of those outliers in the next chapter. 
 
-### Classifier
-```{r include=FALSE}
-artist_features <-
+### A closer Look at Tempo
+
+```{r tempgrams}
+beatles_love <- get_tidy_audio_analysis("6KqiVlOLfDzJViJVAPym1p")
+nirvana_marigold <- get_tidy_audio_analysis("40VSbBSYbPN10vJYeZq4tm")
+
+tempogram_1 <-
+  beatles_love |>
+    tempogram(window_size = 8, hop_size = 1, cyclic = FALSE) |>
+    ggplot(aes(x = time, y = bpm, fill = power)) +
+    geom_raster() +
+    scale_fill_viridis_c(guide = "none") +
+    labs(title = "All You Need is Love - The Beatles",
+        x = "Time (s)",
+        y = "Tempo (BPM)") +
+    theme_classic()
+
+tempogram_2 <- 
+  nirvana_marigold |>
+    tempogram(window_size = 8, hop_size = 1, cyclic = FALSE) |>
+    ggplot(aes(x = time, y = bpm, fill = power)) +
+    geom_raster() +
+    scale_fill_viridis_c(guide = "none") +
+    labs(title = "Marigold - Nirvana",
+        x = "Time (s)",
+        y = "Tempo (BPM)") +
+    theme_classic()
+
+plot_grid(tempogram_1, tempogram_2, ncol = 1)
+```
+
+***
+As seen in the previous chapter, there are a few tracks with high variations of tempo. In this chapter we will have a look at some of these. We will not look at the most expreme outliers, but at those in-between 
+
+One of those outliers is "All You Need Is Love" from The Beatles, with a tempo standard deviation of 7.5. The top plot on the left shows the fourier tempogram from this track. Throughout the track, the tempo seems so slowly build up. There is also a lot of strong tempo-harmonics at play. Especially the at 3:1 the tempo envelope. A point of interest is around the 200 second mark, where for a brief moment tempo estimation becomes really hard
+
+<iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/6KqiVlOLfDzJViJVAPym1p?utm_source=generator&theme=0" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+
+The second outlier is "Marigold" from Nirvana. It has around the variation in tempo of "All You Need Is Love", but a higher overall tempo. This track also slowly build up the tempo throughout the track. A notable difference here is the lack of strong tempo-harmonics. There is only a strong harmonic at two times the tempo envelope, but it is not as strong as the top graph. There is also a weaker harmonic at around 3:1 the tempo envelope. But with this track, there is no big time periods where tempo estimation gets hard.
+
+<iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/40VSbBSYbPN10vJYeZq4tm?utm_source=generator" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+
+### What features distinguise the bands the most?
+```{r classication-pre-processing, include=FALSE}
+band_features <-
   playlist_full |>
   mutate(
     playlist = factor(artist_name),
@@ -411,57 +454,70 @@ artist_features <-
   mutate(pitches = map(pitches, compmus_normalise, "clr")) |>
   mutate_at(vars(pitches, timbre), map, bind_rows) |>
   unnest(cols = c(pitches, timbre))
-```
 
-
-```{r include=FALSE}
-
-artist_recipe <-
+band_recipe <-
   recipe(
     playlist ~
+      danceability +
+      energy +
+      loudness +
+      speechiness +
       acousticness +
       instrumentalness +
+      liveness +
       valence +
+      tempo +
       duration +
-      c02 + c05 + c06 + c11,
-    data = artist_features
+      C + `C#|Db` + D + `D#|Eb` +
+      E + `F` + `F#|Gb` + G +
+      `G#|Ab` + A + `A#|Bb` + B +
+      c01 + c02 + c03 + c04 + c05 + c06 +
+      c07 + c08 + c09 + c10 + c11 + c12,
+    data = band_features
   ) |>
   step_center(all_predictors()) |>
   step_scale(all_predictors())
 
-artist_cv <- artist_features |> vfold_cv(5)
+band_cv <- band_features |> vfold_cv(5)
 ```
 
-```{r}
+```{r feature-ranking}
 forest_model <-
   rand_forest() |>
   set_mode("classification") |> 
   set_engine("ranger", importance = "impurity")
-artist_forest <- 
+band_forest <- 
   workflow() |> 
-  add_recipe(artist_recipe) |> 
+  add_recipe(band_recipe) |> 
   add_model(forest_model) |> 
   fit_resamples(
-    artist_cv, 
+    band_cv, 
     control = control_resamples(save_pred = TRUE)
   )
 
-# artist_forest |> get_pr()
-
-artist_forest |> get_conf_mat() |> autoplot(type = "mosaic")
+workflow() |> 
+  add_recipe(band_recipe) |> 
+  add_model(forest_model) |> 
+  fit(band_features) |> 
+  pluck("fit", "fit", "fit") |>
+  ranger::importance() |> 
+  enframe() |> 
+  mutate(name = fct_reorder(name, value)) |> 
+  ggplot(aes(name, value)) + 
+  geom_col() + 
+  coord_flip() +
+  theme_minimal() +
+  labs(title = "Feature Ranking in Importance", x = NULL, y = "Importance")
 ```
 
 ***
-The graph on the left shows the performance of a random-forest classifier trying to distinguish the three artists. Using all features, the most important are listed below:
+We have now seen a lot of different visualizations that differentiate the three bands? But what features are the most important differences between the bands? To answer this question, a random forest decision tree was trained. This algorithm gives a ranking of how important each feature is for classification. The ranking for the three bands can be seen on this plot.
 
-- acousticness 
+According to this ranking, there is a big difference between a few features. One of those is valence, which we have already seen in the first chapter. No big surprise that it ranks high, since we have already seen there is a big difference in valence between the bands. Two other important features that we have not seen before is the duration of the tracks and acousticness.
 
-- instrumentalness
+Two other big differences can be seen in the spectral envelop. This is most notable with the c05 and c06 partials. There does not seem to be a big distinction in the different chroma's used.
 
-- valence 
+### Classifying Independant Tracks
 
-- duration
 
-The classifier also found that some of the chroma are important during classification: c02, c05, c06 and c11. All these features were used to train the random-forest classifier eventually used.
-
-Overall, the classifier performs really well. 
+### Conclusion
