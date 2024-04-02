@@ -146,10 +146,11 @@ On the valence graph on the left, we can see that The Beatles have the most "pos
 
 When looking at the energy graph on the right, Nirvana is the outlier. They have by far the highest level of energy per track with a median of 0.83. This is not surprising, since rock songs of this time period (especially in "grunge rock") are known for their high levels of intensity. Coldplay follows with a median of 0.63, while The Beatles have a median intensity of 0.43. I also found the results for The Beatles not surprising, since their tracks usually play more slow.
 
-### Chromagram and Cepstrogram
+### Chroma Features
 
 ```{r}
 outlier <- "11LmqTE2naFULdEP94AUBa"
+# outlier <- "6dGnYIeXmHdcikdzNNDMm2"
 
 chroma <-
   get_tidy_audio_analysis(outlier) |>
@@ -170,10 +171,15 @@ plot1a <-
       )
     ) +
     geom_tile() +
+    geom_vline(xintercept = 50, colour = "red") +
+    geom_vline(xintercept = 90, colour = "red") +
+    geom_vline(xintercept = 120, colour = "red") +
+    geom_vline(xintercept = 165, colour = "red") +
+    geom_vline(xintercept = 215, colour = "red") +
     labs(x = "Time (s)",
          y = NULL,
          fill = "Magnitude",
-         title = "Chromogram (Heart Shaped Box - Nirvana)") +
+         title = "Chromagram (Heart Shaped Box - Nirvana)") +
     theme_minimal() +
     scale_fill_viridis_c()
 
@@ -210,11 +216,16 @@ plot1b <-
       )
     ) +
     geom_tile() +
+    geom_vline(xintercept = 45, colour = "red") +
+    geom_vline(xintercept = 90, colour = "red") +
+    geom_vline(xintercept = 120, colour = "red") +
+    geom_vline(xintercept = 165, colour = "red") +
+    geom_vline(xintercept = 215, colour = "red") +
     labs(
       x = "Time (s)",
       y = NULL,
       fill = "Magnitude",
-      title = "Chepstrogram (Heart Shaped Box - Nirvana)") +
+      title = "Chepstogram (Heart Shaped Box - Nirvana)") +
     scale_fill_viridis_c() +
     theme_classic()
 
@@ -222,6 +233,11 @@ plot_grid(plot1a, plot1b, ncol = 1)
 ```
 
 ***
+One of the fastest tracks in this corpus in "Heart Shaped Box" by Nirvana. It does have the highest tempo (which we will get to in later chapters). It's pitch content is displayed in the two graphs on the left. The top graph shows the chromagram of this graph and the bottom one shows the chepstogram. The chromagram displays the energy distribution of different pitch classes over time, while the chepstogram displays the spectral content over time.
+
+<iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/11LmqTE2naFULdEP94AUBa?utm_source=generator&theme=0" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+
+This track can be roughly divided into two 'structures' that interchange. To time points in which those changes happen is marked with the red lines. The track starts with a lot of energy in the G#/Ab and G#/Db pitch classes, with also a little bit coming from E. We can see this on the chepstogram, where there is high energy for two frequencies. At around the 45 second mark, most energy in the G#/Db pitch class seems to disappear. Almost all the energy then comes from just the G#/Ab pitch class. This is also noticeable in the cheptogram, where most energy is now in c01. These two parts than interchange multiple times throughout the track.    
 
 ### Valence Explained By Tonal Analyses
 ```{r key-template, include=FALSE}
@@ -469,7 +485,7 @@ plot_grid(ssm1, ssm2, ncol = 2)
 ***
 The plots in this chapter show the structure of two of the most popular songs in the corpus: Smells Like Teen Spirit by Nirvana and Yellow by Coldplay. The structures are shown with timbre-based self-similarity matrices that are summarized on the bar level. Both are also use euclidean normalization and cosine distance. The combination of these shows the clearest structure. In a self-similarity matrix, every time instance is compared to itself. The blue points and squares show that there is a similarity in timbre.
 
-High levels of similarity can be seen with checkerboard patterns. Those are clearly more profound in Smells Like Teen Spirit, where the overall structure is clearly visible. It roughly has a A-B-C-B-C-C-B-C structure. This structure is a lot less clear in Yellow, meaning the timbre changes throughout the track, or Spotify has trouble picking up on the timbre. By listening to this track, there are clearly repeating patterns, giving me reasons to suspect it is the second reason.  
+High levels of similarity can be seen with checkerboard patterns. Those are clearly more profound in Smells Like Teen Spirit, where the overall structure is clearly visible. It roughly has a A-B-C-B-C-C-B-C structure. This structure is a lot less clear in Yellow, because of the absence of clear yellow 'bars' and there seems to be a lot of noise. When listening to the song, it is indeed hard to notice significant changes in timbre. Because of this, there is no clear (timbre) structure.  
 
 ### Track-Level Features: Tempo and Loudness
 ```{r track-features-2}
@@ -702,5 +718,13 @@ data_for_clustering |>
     )
   )
 ```
+
+***
+In the previous chapter, we have seen the most important features that distinguish the three bands. But just how well are these features in the separation of the three bands? The plot on this page shows a dendogram that was made with a clustering algorithm (using the "average" method). This plot shows the groups that are formed by tracks that are similar based on the top 9 features discussed earlier. Only the top 10 songs in popularity have been selected from each band.
+
+As can be seen, a lot of the tracks from The Beatles form a clear cluster. This means they are quite different from the tracks of the other two bands. What is interesting is that a lot of the songs from Coldplay have two big clusters that are separated quite far from each other. Nirvana does not seem to have a big cluster of itself. A lot of their tracks start mixing with Coldplay, while some start mixing with the remaining Beatles songs that are not in the big cluster.
+
+I found the results of this dendogram quite surprising. I initially thought that Nirvana would also have one or two clear clusters, but that is not the case. This is probably the result of energy being left out. The fact that valence is included can be a reason why The Beatles do have a clear cluster. This dendogram shows that although there is clear distinctions between the bands, there are also some tracks that share the same characteristics.
+
 ### Conclusion
 hallo
