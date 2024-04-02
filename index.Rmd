@@ -336,6 +336,12 @@ ob_la_di |>
   labs(title = "Keygram: Ob-La-Di, Ob-La-Da - The Beatles",x = "Time (s)", y = "Keys")
 ```
 
+***
+In the first chapter, we have seen big differences of valence between each band. The tracks of the Beatles seem to overall have a happy mood, while tracks of Coldplay seem to be more somber. A big contributor of the level of valence within a track is the tone, which is influenced by the different keys. In particular, we should focus on the major and minor keys to explain valance. Major chords tend to be bright, uplifting and joyful and thus having a positive impact on valence. Minor chords on the other hand are experienced as dark and somber, resulting in a lower valence score.  
+
+The plot on the left shows "Ob-La-Di, Ob-La-Da" by The Beatles. This track has one of the highest levels of valence of The Beatles and also of the entire corpus. The distances are represented as angular distances while using euclidean normalization. Throughout the track, the different keys are pretty blurry. We can, however, still make up the most used keys. Most of those are major keys, such as B major, E major and G major. There is not a lot of prominent minor keys. The only two are G# minor and E minor. The prominence of major keys gives a good explanation of the high valence score.
+
+On the next page, we will have a look at a keygram from a Coldplay track. The goal is to see there is a difference is the tone that explains the lower valence of their tracks.
 
 ### Tonal Analyses, Continued
 ```{r keygram-2}
@@ -375,12 +381,6 @@ On the previous page, it was mentioned that Coldplay song seem to be more somber
 This keygram uses the same normalization and distance measure. As can be seen, there is a lot more spillage of keys and it is not really clear what keys are the most prominent. There does seem to be a good balance between minor and major keys in the first part of the track, which can already result in a more somber tone than "Ob-La-Di, Ob-La-Da". On the second part of the song, it becomes even more impossible to distinguish the different keys. But also here it seems like there is a good balance between minor and major keys.
 
 Because of the high spillage on this keygram, there is not a definitive conclusion of whether the chords used by Coldplay give it a sad character.
-***
-In the first chapter, we have seen big differences of valence between each band. The tracks of the Beatles seem to overall have a happy mood, while tracks of Coldplay seem to be more somber. A big contributor of the level of valence within a track is the tone, which is influenced by the different keys. In particular, we should focus on the major and minor keys to explain valance. Major chords tend to be bright, uplifting and joyful and thus having a positive impact on valence. Minor chords on the other hand are experienced as dark and somber, resulting in a lower valence score.  
-
-The plot on the left shows "Ob-La-Di, Ob-La-Da" by The Beatles. This track has one of the highest levels of valence of The Beatles and also of the entire corpus. The distances are represented as angular distances while using euclidean normalization. Throughout the track, the different keys are pretty blurry. We can, however, still make up the most used keys. Most of those are major keys, such as B major, E major and G major. There is not a lot of prominent minor keys. The only two are G# minor and E minor. The prominence of major keys gives a good explanation of the high valence score.
-
-On the next page, we will have a look at a keygram from a Coldplay track. The goal is to see there is a difference is the tone that explains the lower valence of their tracks.
 
 ### Structure Using Self-Simularity Matrices
 ```{r self-simularity}
@@ -471,8 +471,6 @@ The plots in this chapter show the structure of two of the most popular songs in
 
 High levels of similarity can be seen with checkerboard patterns. Those are clearly more profound in Smells Like Teen Spirit, where the overall structure is clearly visible. It roughly has a A-B-C-B-C-C-B-C structure. This structure is a lot less clear in Yellow, meaning the timbre changes throughout the track, or Spotify has trouble picking up on the timbre. By listening to this track, there are clearly repeating patterns, giving me reasons to suspect it is the second reason.  
 
-### keygram / chordogram
-
 ### Track-Level Features: Tempo and Loudness
 ```{r track-features-2}
 playlist_full |>
@@ -519,29 +517,29 @@ The tempo in this graph yields some interesting results. When it comes to the me
 beatles_love <- get_tidy_audio_analysis("6KqiVlOLfDzJViJVAPym1p")
 nirvana_marigold <- get_tidy_audio_analysis("40VSbBSYbPN10vJYeZq4tm")
 
-tempogram_1 <-
-  beatles_love |>
-    tempogram(window_size = 8, hop_size = 1, cyclic = FALSE) |>
-    ggplot(aes(x = time, y = bpm, fill = power)) +
-    geom_raster() +
-    scale_fill_viridis_c(guide = "none") +
-    labs(title = "All You Need is Love - The Beatles",
-        x = "Time (s)",
-        y = "Tempo (BPM)") +
-    theme_classic()
-
-tempogram_2 <- 
-  nirvana_marigold |>
-    tempogram(window_size = 8, hop_size = 1, cyclic = FALSE) |>
-    ggplot(aes(x = time, y = bpm, fill = power)) +
-    geom_raster() +
-    scale_fill_viridis_c(guide = "none") +
-    labs(title = "Marigold - Nirvana",
-        x = "Time (s)",
-        y = "Tempo (BPM)") +
-    theme_classic()
-
-plot_grid(tempogram_1, tempogram_2, ncol = 1)
+# tempogram_1 <-
+#   beatles_love |>
+#     tempogram(window_size = 8, hop_size = 1, cyclic = FALSE) |>
+#     ggplot(aes(x = time, y = bpm, fill = power)) +
+#     geom_raster() +
+#     scale_fill_viridis_c(guide = "none") +
+#     labs(title = "All You Need is Love - The Beatles",
+#         x = "Time (s)",
+#         y = "Tempo (BPM)") +
+#     theme_classic()
+# 
+# tempogram_2 <- 
+#   nirvana_marigold |>
+#     tempogram(window_size = 8, hop_size = 1, cyclic = FALSE) |>
+#     ggplot(aes(x = time, y = bpm, fill = power)) +
+#     geom_raster() +
+#     scale_fill_viridis_c(guide = "none") +
+#     labs(title = "Marigold - Nirvana",
+#         x = "Time (s)",
+#         y = "Tempo (BPM)") +
+#     theme_classic()
+# 
+# plot_grid(tempogram_1, tempogram_2, ncol = 1)
 ```
 
 ***
@@ -555,7 +553,7 @@ The second outlier is "Marigold" from Nirvana. It has around the variation in te
 
 <iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/40VSbBSYbPN10vJYeZq4tm?utm_source=generator" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
 
-### What features distinguise the bands the most?
+### What Features Distinguise The Bands The Most?
 ```{r classication-pre-processing, include=FALSE}
 band_features <-
   playlist_full |>
@@ -641,7 +639,68 @@ According to this ranking, there is a big difference between a few features. One
 
 Two other big differences can be seen in the spectral envelop. This is most notable with the c05 and c06 partials. There does not seem to be a big distinction in the different chroma's used.
 
-### Classifying Independant Tracks
+### Clustering of Tracks
+```{r clustering-pre-processing, include=FALSE}
+top_10 <- band_features %>%
+  group_by(artist_name) %>%
+  top_n(10, track.popularity)
 
+top10_features <- bind_rows(top_10)
 
+playlist_juice <-
+  recipe(
+    track.name ~
+      loudness +
+      acousticness +
+      instrumentalness +
+      valence +
+      c02 + c05 + c06 + c11,
+    data = top10_features
+  ) |>
+  step_center(all_predictors()) |>
+  step_scale(all_predictors()) |> 
+  # step_range(all_predictors()) |> 
+  prep(top10_features |> mutate(track.name = str_trunc(track.name, 20))) |>
+  juice() |>
+  column_to_rownames("track.name")
+
+playlist_dist <- dist(playlist_juice, method = "euclidean")
+
+data_for_clustering <- playlist_dist |> 
+  hclust(method = "average") |> 
+  dendro_data() 
+
+playlist_data_for_join <- top10_features %>%
+  select(track.name, artist_name) %>%
+  mutate(label = str_trunc(track.name, 20))
+
+data_for_clustering$labels <- data_for_clustering$labels %>%
+  left_join(playlist_data_for_join)
+
+data_for_clustering$labels$label <- factor(data_for_clustering$labels$label)
+```
+
+```{r dendogram}
+data_for_clustering |>
+  ggdendrogram() +
+  geom_text(data = label(data_for_clustering), aes(x, y, 
+                                   label=label, 
+                                   hjust=0, 
+                                   colour=artist_name), size=3) +
+  coord_flip() + 
+  scale_y_reverse(expand=c(0.2, 0)) +
+  theme(axis.line.y=element_blank(),
+        axis.ticks.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.title.y=element_blank(),
+        panel.background=element_rect(fill="white"),
+        panel.grid=element_blank()) +
+  labs(title = "Band Clustering") +
+  guides(
+    colour = guide_legend(
+      title = "Band"
+    )
+  )
+```
 ### Conclusion
+hallo
