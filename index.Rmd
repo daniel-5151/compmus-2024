@@ -533,29 +533,29 @@ The tempo in this graph yields some interesting results. When it comes to the me
 beatles_love <- get_tidy_audio_analysis("6KqiVlOLfDzJViJVAPym1p")
 nirvana_marigold <- get_tidy_audio_analysis("40VSbBSYbPN10vJYeZq4tm")
 
-# tempogram_1 <-
-#   beatles_love |>
-#     tempogram(window_size = 8, hop_size = 1, cyclic = FALSE) |>
-#     ggplot(aes(x = time, y = bpm, fill = power)) +
-#     geom_raster() +
-#     scale_fill_viridis_c(guide = "none") +
-#     labs(title = "All You Need is Love - The Beatles",
-#         x = "Time (s)",
-#         y = "Tempo (BPM)") +
-#     theme_classic()
-# 
-# tempogram_2 <- 
-#   nirvana_marigold |>
-#     tempogram(window_size = 8, hop_size = 1, cyclic = FALSE) |>
-#     ggplot(aes(x = time, y = bpm, fill = power)) +
-#     geom_raster() +
-#     scale_fill_viridis_c(guide = "none") +
-#     labs(title = "Marigold - Nirvana",
-#         x = "Time (s)",
-#         y = "Tempo (BPM)") +
-#     theme_classic()
-# 
-# plot_grid(tempogram_1, tempogram_2, ncol = 1)
+tempogram_1 <-
+  beatles_love |>
+    tempogram(window_size = 8, hop_size = 1, cyclic = FALSE) |>
+    ggplot(aes(x = time, y = bpm, fill = power)) +
+    geom_raster() +
+    scale_fill_viridis_c(guide = "none") +
+    labs(title = "All You Need is Love - The Beatles",
+        x = "Time (s)",
+        y = "Tempo (BPM)") +
+    theme_classic()
+
+tempogram_2 <-
+  nirvana_marigold |>
+    tempogram(window_size = 8, hop_size = 1, cyclic = FALSE) |>
+    ggplot(aes(x = time, y = bpm, fill = power)) +
+    geom_raster() +
+    scale_fill_viridis_c(guide = "none") +
+    labs(title = "Marigold - Nirvana",
+        x = "Time (s)",
+        y = "Tempo (BPM)") +
+    theme_classic()
+
+plot_grid(tempogram_1, tempogram_2, ncol = 1)
 ```
 
 ***
@@ -726,5 +726,12 @@ As can be seen, a lot of the tracks from The Beatles form a clear cluster. This 
 
 I found the results of this dendogram quite surprising. I initially thought that Nirvana would also have one or two clear clusters, but that is not the case. This is probably the result of energy being left out. The fact that valence is included can be a reason why The Beatles do have a clear cluster. This dendogram shows that although there is clear distinctions between the bands, there are also some tracks that share the same characteristics.
 
-### Conclusion
-hallo
+### Conclusion and Discussion
+
+In this portfolio, we have looked at three popular rock bands that hit their heights in different time periods: The Beatles, Nirvana and Coldplay. The data from the Spotify API were used to if there are notable difference between some of their tracks. At first, a brief look was given at two important track-level features: energy and valence. It was concluded that on those two features, there were already stark differences. We than had a look at some of the pitch features of one of the tracks: Heart-Shaped Box by Nirvana. Here we have seen some of the different pitches used throughout the track. The different keys used in two tracks from The Beatles and Coldplay were also used to explain the differences in valence between the bands. It did yield some results, but no definitive conclusion was possible.
+
+We then had a look at the structures of two popular songs from Nirvana and Coldplay, in which is was concluded that Nirvana had a clear difference of timbre in some of the sections. Coldplay seemed to have this a lot less in their most popular track. We then had a look at other track-level features, in particular tempo. It was concluded that there were a lot of different tempo's used by the bands. Nirvana had the fastest overall tempo and biggest variation in tempo throughout their tracks. We also had a look at the tempo harmonics for some of the outliers.
+
+In the last chapters, two machine learning algorithms were used to make further distinctions. A random forest algorithm gave the features that have the biggest differences and a clustering algorithm grouped the most popular songs together, which had some interesting combinations.
+
+Overall, the three bands have very different characteristics in a lot of areas. Based on the plots, and especially with the clustering, it seems like The Beatles and Nirvana are the furthest apart. Coldplay overall falls somewhere between the two. This portfolio shows the diversity that rock music has to. This portfolio, however, only gives the tip of the iceberg of what rock music has to over, since there is a lot of sub genres and time periods to explore.
